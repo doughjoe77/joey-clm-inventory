@@ -1,0 +1,341 @@
+openapi: 3.0.1
+info:
+  title: Certificate Inventory API
+  version: 1.0.0
+  description: API for querying SSL/TLS certificate inventory with pagination, sorting, filtering, and aggregation
+
+servers:
+  - url: http://localhost:4000
+
+paths:
+  /certificates:
+    get:
+      summary: Get certificates with pagination, sorting, and filtering
+      description: |
+        Retrieve certificate inventory data with support for:
+        - **Pagination**: 20 records per page
+        - **Sorting**: Any certificate field
+        - **Filtering**: HostName, IPAddress, VulnerabilityRating, VulnerabilityNumericRating, CertificateIsExpired, Port
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          description: Page number (1-based)
+          schema:
+            type: integer
+            default: 1
+        - name: sortField
+          in: query
+          description: Field to sort by (default HostName)
+          schema:
+            type: string
+            enum:
+              - HostName
+              - IPAddress
+              - Environment
+              - Port
+              - Thumbprint
+              - Subject
+              - Issuer
+              - CertificateIsTrusted
+              - IssuanceDate
+              - ExpirationDate
+              - CertificateValidityPeriodInYears
+              - CertificateValidityPeriodInDays
+              - CertificateIsExpired
+              - IsWildcardCertificate
+              - IsSelfSignedCertificate
+              - CertificateSubjectMatchesHostName
+              - SignatureAlgorithm
+              - NegotiatedCipherSuites
+              - CipherAlgorithm
+              - CipherStrength
+              - KeyExchangeAlgorithm
+              - KeySize
+              - StrictTransportSecurity
+              - SubjectAlternativeNames
+              - Ssl2
+              - Ssl3
+              - Tls
+              - Tls11
+              - Tls12
+              - Tls13
+              - ExpirationCategory
+              - ExpirationRating
+              - ExpirationNumericRating
+              - CertificateChainVulnerabilityTrustRating
+              - CertificateChainTrustVulnerabilityNumericRating
+              - CertificateSubjectMatchesHostNameVulnerabilityRating
+              - CertificateSubjectMatchesHostNameVulnerabilityNumericRating
+              - CertificateHasSANsVulnerabilityRating
+              - CertificateHasSANsVulnerabilityNumericRating
+              - SignatureAlgorithmVulnerabilityRating
+              - SignatureAlgorithmVulnerabilityNumericRating
+              - TlsProtocolVulnerabilityRating
+              - TlsProtocolVulnerabilityNumericRating
+              - SelfSignedCertificateVulnerabilityRating
+              - SelfSignedCertificateVulnerabilityNumericRating
+              - CertValidityPeriodVulnerabilityRating
+              - CertValidityPeriodVulnerabilityNumericRating
+              - VulnerabilityCumulativeNumericRating
+              - VulnerabilityRating
+              - VulnerabilityNumericRating
+              - VulnerabilityRatingExplanation
+        - name: sortOrder
+          in: query
+          description: Sort order (asc or desc)
+          schema:
+            type: string
+            enum:
+              - asc
+              - desc
+            default: asc
+        - name: hostName
+          in: query
+          description: Filter by hostname (partial match, case-insensitive)
+          schema:
+            type: string
+        - name: ipAddress
+          in: query
+          description: Filter by IP address (exact match)
+          schema:
+            type: string
+        - name: vulnerabilityRating
+          in: query
+          description: Filter by vulnerability rating (None, Low, Medium, High)
+          schema:
+            type: string
+        - name: vulnerabilityNumericRating
+          in: query
+          description: Filter by numeric vulnerability rating
+          schema:
+            type: integer
+        - name: certificateIsExpired
+          in: query
+          description: Filter by expiration status (true or false)
+          schema:
+            type: boolean
+        - name: port
+          in: query
+          description: Filter by port number
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Paginated list of certificates
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  page:
+                    type: integer
+                    description: Current page number
+                  pageSize:
+                    type: integer
+                    description: Records per page
+                  totalRecords:
+                    type: integer
+                    description: Total number of records
+                  totalPages:
+                    type: integer
+                    description: Total number of pages
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Certificate'
+        '401':
+          description: Unauthorized - Invalid or missing JWT
+
+  /certificates/stats:
+    get:
+      summary: Get certificate statistics and aggregations
+      description: |
+        Retrieve aggregated statistics about the certificate inventory:
+        - Total number of certificates
+        - Count of expired certificates
+        - Count of vulnerable certificates
+        - Health percentage
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Certificate statistics
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  totalCerts:
+                    type: integer
+                    description: Total number of certificates
+                  expiredCerts:
+                    type: integer
+                    description: Number of expired certificates
+                  vulnerableCerts:
+                    type: integer
+                    description: Number of vulnerable certificates (VulnerabilityNumericRating > 0)
+                  healthyPercent:
+                    type: string
+                    description: Percentage of healthy certificates
+        '401':
+          description: Unauthorized - Invalid or missing JWT
+
+  /certificates-test:
+    get:
+      summary: Get certificates (test endpoint without authentication)
+      description: |
+        Retrieve paginated certificate data without requiring JWT authentication.
+        Useful for testing API connectivity.
+      parameters:
+        - name: page
+          in: query
+          description: Page number (1-based)
+          schema:
+            type: integer
+            default: 1
+      responses:
+        '200':
+          description: Paginated list of certificates
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  page:
+                    type: integer
+                  pageSize:
+                    type: integer
+                  totalRecords:
+                    type: integer
+                  totalPages:
+                    type: integer
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Certificate'
+                  note:
+                    type: string
+                    example: This endpoint does NOT require a JWT
+
+components:
+  schemas:
+    Certificate:
+      type: object
+      properties:
+        HostName:
+          type: string
+        IPAddress:
+          type: string
+        Environment:
+          type: string
+        Port:
+          type: integer
+        Thumbprint:
+          type: string
+        Subject:
+          type: string
+        Issuer:
+          type: string
+        CertificateIsTrusted:
+          type: boolean
+        IssuanceDate:
+          type: string
+          format: date-time
+        ExpirationDate:
+          type: string
+          format: date-time
+        CertificateValidityPeriodInYears:
+          type: integer
+        CertificateValidityPeriodInDays:
+          type: integer
+        CertificateIsExpired:
+          type: boolean
+        IsWildcardCertificate:
+          type: boolean
+        IsSelfSignedCertificate:
+          type: boolean
+        CertificateSubjectMatchesHostName:
+          type: boolean
+        SignatureAlgorithm:
+          type: string
+        NegotiatedCipherSuites:
+          type: array
+          items:
+            type: string
+        CipherAlgorithm:
+          type: string
+        CipherStrength:
+          type: string
+        KeyExchangeAlgorithm:
+          type: string
+        KeySize:
+          type: integer
+        StrictTransportSecurity:
+          type: string
+        SubjectAlternativeNames:
+          type: array
+          items:
+            type: string
+        Ssl2:
+          type: boolean
+        Ssl3:
+          type: boolean
+        Tls:
+          type: boolean
+        Tls11:
+          type: boolean
+        Tls12:
+          type: boolean
+        Tls13:
+          type: boolean
+        ExpirationCategory:
+          type: string
+        ExpirationRating:
+          type: string
+        ExpirationNumericRating:
+          type: integer
+        CertificateChainVulnerabilityTrustRating:
+          type: string
+        CertificateChainTrustVulnerabilityNumericRating:
+          type: integer
+        CertificateSubjectMatchesHostNameVulnerabilityRating:
+          type: string
+        CertificateSubjectMatchesHostNameVulnerabilityNumericRating:
+          type: integer
+        CertificateHasSANsVulnerabilityRating:
+          type: string
+        CertificateHasSANsVulnerabilityNumericRating:
+          type: integer
+        SignatureAlgorithmVulnerabilityRating:
+          type: string
+        SignatureAlgorithmVulnerabilityNumericRating:
+          type: integer
+        TlsProtocolVulnerabilityRating:
+          type: string
+        TlsProtocolVulnerabilityNumericRating:
+          type: integer
+        SelfSignedCertificateVulnerabilityRating:
+          type: string
+        SelfSignedCertificateVulnerabilityNumericRating:
+          type: integer
+        CertValidityPeriodVulnerabilityRating:
+          type: string
+        CertValidityPeriodVulnerabilityNumericRating:
+          type: integer
+        VulnerabilityCumulativeNumericRating:
+          type: integer
+        VulnerabilityRating:
+          type: string
+        VulnerabilityNumericRating:
+          type: integer
+        VulnerabilityRatingExplanation:
+          type: string
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token obtained from Entra External ID
