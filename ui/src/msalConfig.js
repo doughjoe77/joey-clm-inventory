@@ -5,7 +5,7 @@ export const msalConfig = {
     redirectUri: import.meta.env.VITE_REACT_APP_REDIRECT_URI
   },
   cache: {
-    cacheLocation: "localStorage",
+    cacheLocation: "sessionStorage",
     storeAuthStateInCookie: false
   }
 };
